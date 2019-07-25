@@ -1,5 +1,5 @@
-###############################
 INSTRUCTIONS TO USE THE PROGRAM
+
 ###############################
 
 Maven and related plugins are required to run the program directly without packaging.
@@ -23,20 +23,32 @@ mvn clean install exec:java -Dexec.mainClass="com.anz.interview.fxCalculator.app
 mvn clean package
 
 
-#####################################################
+
 COMMAND EXAMPLES -- TO EXIT THE PROGRAM ENTER q or Q
+
 #####################################################
 
 %> AUD 100.00 in USD
+
 AUD 100.00 = USD 83.71
+
 %> AUD 100.00 in AUD
+
 AUD 100.00 = AUD 100.00
+
 %> AUD 100.00 in DKK
+
 AUD 100.00 = DKK 505.76
+
 %> JPY 100 in USD
+
 JPY 100 = USD 0.83
+
 %> KRW 1000.00 in FJD
+
 Unable to find rate for KRW/FJD
 
+
 %> q
+
 Process finished with exit code 0
