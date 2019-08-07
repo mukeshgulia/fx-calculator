@@ -6,10 +6,13 @@ Instructions to use the program
 * Go the directory where pom.xml file is located and use below options
 
   * Run Directly using spring-boot maven plugin
+  
         mvn spring-boot:run
 
   * To used packaged jar
+  
        mvn clean package
+       
        java -jar target/fxcalculator-1.0-SNAPSHOT.jar
 
   * NOTE: Test code coverage report can be viewed at {project.home}/target/site/jacoco/index.html
