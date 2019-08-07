@@ -9,7 +9,7 @@ Instructions to use the program
   
         mvn spring-boot:run
 
-  * To used packaged jar
+  * Using packaged jar
     
         mvn clean package
         
