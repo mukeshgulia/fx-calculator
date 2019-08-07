@@ -168,7 +168,7 @@ public final class FxState {
         if (baseCurrency.isPresent()) {
             rate = baseCurrency.get().getDirectConversionRates()
                     .entrySet().stream()
-                    .filter((entry) -> termCurrencyName.equals(entry.getKey().getName()))
+                    .filter((entry) -> termCurrencyName.equalsIgnoreCase(entry.getKey().getName()))
                     .map(Map.Entry::getValue)
                     .findFirst();
 
