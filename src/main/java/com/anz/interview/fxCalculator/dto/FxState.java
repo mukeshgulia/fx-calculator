@@ -3,88 +3,84 @@ package com.anz.interview.fxCalculator.dto;
 import com.anz.interview.fxCalculator.util.Utils;
 import com.anz.interview.fxCalculator.exception.DataStateException;
 import com.anz.interview.fxCalculator.model.Currency;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Repository;
 
-import java.io.IOException;
+import java.io.*;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+@Repository
 public final class FxState {
 
     private List<Currency> currencies;
     private String[][] rateMatrix;
 
+    @Autowired
     public FxState() throws DataStateException {
-        Path currencyPrecisionFile = null;
-        Path ratesFile = null;
-        Path matrixFile = null;
-        try {
-            currencyPrecisionFile = getPathFromResources("currency-precision.txt");
-            ratesFile = getPathFromResources("direct-conversion-rates.txt");
-            matrixFile = getPathFromResources("matrix.txt");
-        } catch (URISyntaxException e) {
-            throw new DataStateException("Missing File:" + e.getMessage());
-        }
-
-        loadCurrencies(currencyPrecisionFile, ratesFile);
-        generateRatesMatrix(matrixFile);
+        loadCurrencies("currency-precision.txt", "direct-conversion-rates.txt");
+        generateRatesMatrix("matrix.txt");
     }
 
     public FxState(String... args) throws DataStateException {
 
-        Path currencyPrecisionFile = null;
-        Path ratesFile = null;
-        Path matrixFile = null;
+        String currencyPrecisionFile = null;
+        String ratesFile = null;
+        String matrixFile = null;
 
-        try {
-            for (String param : args) {
-                String[] paramValues = param.split("=");
-                switch (paramValues[0].toLowerCase()) {
-                    case "--currencyPrecision":
-                    case "-cp":
-                        currencyPrecisionFile = Paths.get(paramValues[1]);
-                        break;
-                    case "--rates":
-                    case "-r":
-                        ratesFile = Paths.get(paramValues[1]);
-                        break;
-                    case "--matrix":
-                    case "-m":
-                        matrixFile = Paths.get(paramValues[1]);
-                        break;
-                }
+        for (String param : args) {
+            String[] paramValues = param.split("=");
+            switch (paramValues[0].toLowerCase()) {
+                case "--currencyPrecision":
+                case "-cp":
+                    currencyPrecisionFile = paramValues[1];
+                    break;
+                case "--rates":
+                case "-r":
+                    ratesFile = paramValues[1];
+                    break;
+                case "--matrix":
+                case "-m":
+                    matrixFile = paramValues[1];
+                    break;
             }
+        }
 
-            if (currencyPrecisionFile == null) {
-                currencyPrecisionFile = getPathFromResources("currency-precision.txt");
-            }
-            if (ratesFile == null) {
-                ratesFile = getPathFromResources("direct-conversion-rates.txt");
-            }
-            if (matrixFile == null) {
-                matrixFile = getPathFromResources("matrix.txt");
-            }
-        } catch (InvalidPathException | URISyntaxException e) {
-            throw new DataStateException("Unable to start application: " + e.getMessage());
+        if (currencyPrecisionFile == null) {
+            currencyPrecisionFile = "currency-precision.txt";
+        }
+        if (ratesFile == null) {
+            ratesFile = "direct-conversion-rates.txt";
+        }
+        if (matrixFile == null) {
+            matrixFile = "matrix.txt";
         }
 
         loadCurrencies(currencyPrecisionFile, ratesFile);
         generateRatesMatrix(matrixFile);
     }
 
-    private void loadCurrencies(Path currencyPrecisionFile, Path ratesFile) throws DataStateException {
+    private void loadCurrencies(String currencyPrecisionFile, String ratesFile) throws DataStateException {
 
         currencies = new ArrayList<>();
-        try (Stream<String> cpfStream = Files.lines(currencyPrecisionFile);
-             Stream<String> rStream = Files.lines(ratesFile)) {
 
-            cpfStream.forEach(item -> {
+        try (InputStream cpfStream = getClass().getClassLoader().getResourceAsStream(currencyPrecisionFile);
+             InputStream rStream = getClass().getClassLoader().getResourceAsStream(ratesFile)) {
+
+            List<String> cpfDoc = new BufferedReader(new InputStreamReader(cpfStream, StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
+            cpfDoc.forEach(item -> {
                 String[] values = item.split("=");
 
                 String currencyName = values[0];
@@ -100,7 +96,8 @@ public final class FxState {
                 currencies.add(new Currency(currencyName, df));
             });
 
-            rStream.forEach(item -> {
+            List<String> rDoc = new BufferedReader(new InputStreamReader(rStream, StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
+            rDoc.forEach(item -> {
                 String[] values = item.split("=");
                 String base = values[0].substring(0, 3);
                 String term = values[0].substring(3, 6);
@@ -126,10 +123,11 @@ public final class FxState {
         }
     }
 
-    private void generateRatesMatrix(Path matrixFile) throws DataStateException {
+    private void generateRatesMatrix(String matrixFile) throws DataStateException {
 
-        try {
-            List<String> list = Files.readAllLines(matrixFile);
+        try (InputStream cpfStream = getClass().getClassLoader().getResourceAsStream(matrixFile)) {
+            List<String> list = new BufferedReader(new InputStreamReader(cpfStream, StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
+            //List<String> list = Files.readAllLines(matrixFile);
             rateMatrix = new String[list.size()][list.size()];
 
             IntStream.range(0, list.size())
@@ -191,14 +189,5 @@ public final class FxState {
                 .stream()
                 .filter(c -> c.getName().equalsIgnoreCase(currencyName))
                 .findFirst();
-    }
-
-    private Path getPathFromResources(String fileName) throws URISyntaxException {
-
-
-        Path path = Paths.get(getClass().getClassLoader()
-                .getResource(fileName).toURI());
-
-        return path;
     }
 }

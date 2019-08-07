@@ -32,13 +32,4 @@ public class Command {
     public boolean isQuitCommand() {
         return quitCommand;
     }
-
-    @Override
-    public String toString() {
-        return "Command{" +
-                "ccy1='" + ccy1 + '\'' +
-                ", ccy2='" + ccy2 + '\'' +
-                ", amount=" + amount +
-                '}';
-    }
 }
